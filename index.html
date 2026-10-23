@@ -1577,7 +1577,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     void info;
     if (Object.values(st.nec[col] || {}).some((x) => x > 0)) {
       const bo = wb.addWorksheet('Bolsa');
-      bo.getCell('A1').value = `${titulo} — bolsa necesaria por mes (conductores)`; bo.getCell('A1').font = font({ bold: true, size: 13 });
+      bo.getCell('A1').value = `${titulo} — conductores de bolsa necesarios cada día, por mes`; bo.getCell('A1').font = font({ bold: true, size: 13 });
       const base = st.cfg.absBase != null ? st.cfg.absBase : 0.06;
       bo.getCell('A2').value = `Necesarios de la empresa con ${Math.round(base * 100)} % de absentismo ya incluido. Otros % = escalado proporcional (estimación, no cifra de la empresa).`; bo.getCell('A2').font = font({ italic: true, size: 9 });
       let rr = 4;
@@ -1585,7 +1585,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         const b = C.bolsaMensual(st, col, ab);
         bo.getCell(rr, 1).value = `Absentismo ${Math.round(ab * 100)} %`; bo.getCell(rr, 1).font = font({ bold: true });
         ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic','Año'].forEach((h, k) => { const c = bo.getCell(rr, k + 2); c.value = h; c.font = font({ bold: true }); c.fill = fill('BDEBF2'); c.alignment = center; c.border = box; });
-        [['Media diaria', 'media', 1], ['Pico (día máx.)', 'pico', 0], ['Personas-día', 'pd', 0]].forEach(([lab, k, dec], q) => {
+        [['Bolsa media al día', 'media', 1], ['Día más cargado', 'pico', 0], ['Días con falta', 'dias', 0]].forEach(([lab, k, dec], q) => {
           bo.getCell(rr + 1 + q, 1).value = lab;
           b.meses.concat([b.total]).forEach((x, m) => { const c = bo.getCell(rr + 1 + q, m + 2); c.value = Math.round(x[k] * 10 ** dec) / 10 ** dec; c.alignment = center; c.border = box; c.font = font(); });
         });
@@ -1985,16 +1985,16 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     const b = C.bolsaMensual(st, cur.col, ab), pct = (x) => Math.round(x * 1000) / 10;
     const esc = [0.06, 0.07, 0.08, 0.09, 0.10].map((a) => ({ a, b: C.bolsaMensual(st, cur.col, a) }));
     const f1 = (x) => (Math.round(x * 10) / 10).toString().replace('.', ',');
-    return `<h3>Bolsa necesaria por mes</h3>
+    return `<h3>Conductores de bolsa necesarios cada día, por mes</h3>
       <p class="hint">Los necesarios de la empresa ya llevan un <input id="absBase" type="number" min="0" max="30" step="0.5" value="${pct(base)}"> % de absentismo.
       Absentismo a probar: <input id="absPrueba" type="number" min="0" max="30" step="0.5" value="${pct(ab)}"> %
       (otros % = escalado proporcional, estimación propia). <button type="button" class="btn" id="impEmp">Importar necesarios de la empresa (.xlsx)</button></p>
-      <table class="cob"><thead><tr><th scope="col">Mes</th><th scope="col">Bolsa, media al día</th><th scope="col">Pico</th><th scope="col">Personas-día</th></tr></thead>
-      <tbody>${b.meses.map((x, m) => `<tr><th scope="row">${MES[m]}</th><td class="num">${f1(x.media)}</td><td class="num">${Math.round(x.pico)}</td><td class="num">${Math.round(x.pd)}</td></tr>`).join('')}
-      <tr><th scope="row">Año</th><td class="num">${f1(b.total.media)}</td><td class="num">${Math.round(b.total.pico)}</td><td class="num">${Math.round(b.total.pd)}</td></tr></tbody></table>
+      <table class="cob"><thead><tr><th scope="col">Mes</th><th scope="col">Conductores de bolsa, media al día</th><th scope="col">Día más cargado</th><th scope="col">Días con falta</th></tr></thead>
+      <tbody>${b.meses.map((x, m) => `<tr><th scope="row">${MES[m]}</th><td class="num">${f1(x.media)}</td><td class="num">${Math.round(x.pico)}</td><td class="num">${x.dias}</td></tr>`).join('')}
+      <tr><th scope="row">Año</th><td class="num">${f1(b.total.media)}</td><td class="num">${Math.round(b.total.pico)}</td><td class="num">${b.total.dias}</td></tr></tbody></table>
       <h3>Escenarios de absentismo (bolsa media al día)</h3>
-      <table class="cob"><thead><tr><th scope="col">%</th>${MES.map((m) => `<th scope="col">${m.slice(0, 3)}</th>`).join('')}<th scope="col">Personas-día</th></tr></thead>
-      <tbody>${esc.map((e) => `<tr><th scope="row">${Math.round(e.a * 100)} %</th>${e.b.meses.map((x) => `<td class="num">${f1(x.media)}</td>`).join('')}<td class="num">${Math.round(e.b.total.pd)}</td></tr>`).join('')}</tbody></table>`;
+      <table class="cob"><thead><tr><th scope="col">%</th>${MES.map((m) => `<th scope="col">${m.slice(0, 3)}</th>`).join('')}<th scope="col">Día más cargado</th></tr></thead>
+      <tbody>${esc.map((e) => `<tr><th scope="row">${Math.round(e.a * 100)} %</th>${e.b.meses.map((x) => `<td class="num">${f1(x.media)}</td>`).join('')}<td class="num">${Math.round(e.b.total.pico)}</td></tr>`).join('')}</tbody></table>`;
   }
   async function importEmp(file) {
     if (!file) return;
@@ -2021,19 +2021,19 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         if (!byM[m].peor || d.diff < byM[m].peor.diff) byM[m].peor = d;
       }
     }
-    const tot = byM.reduce((s, x) => s + x.falta, 0), dias = byM.reduce((s, x) => s + x.dias, 0);
+    const tot = byM.reduce((s, x) => s + x.falta, 0), maxDia = Math.max(0, ...cov.map((d) => -d.diff)), dias = byM.reduce((s, x) => s + x.dias, 0);
     const worst = cov.filter((d) => d.diff < 0).sort((a, b) => a.diff - b.diff).slice(0, 12);
-    const max = Math.max(1, ...byM.map((x) => x.falta));
+    const ndm = (m) => new Date(Date.UTC(st.year, m + 1, 0)).getUTCDate(), mediaM = byM.map((x, m) => x.falta / ndm(m)), max = Math.max(1, ...mediaM);
     $('#viewCob').innerHTML = `<section class="panel">
       <header class="ghead"><div><h2>Cobertura de ${h(cur.col)}</h2>
-      <p>Personas que trabajan cada día frente a los necesarios de la plantilla. Lo que falta es lo que hay que cubrir con bolsa o contratación.</p></div></header>
+      <p>Conductores que trabajan cada día frente a los necesarios de la plantilla. Lo que falta cada día es lo que hay que cubrir con bolsa o contratación.</p></div></header>
       <div class="stats">
-        <div class="stat ${tot ? 'bad' : 'ok'}"><span>Personas-día que faltan en el año</span><strong>${tot}</strong></div>
+        <div class="stat ${tot ? 'bad' : 'ok'}"><span>Máximo que falta en un solo día (conductores)</span><strong>${maxDia}</strong></div>
         <div class="stat"><span>Días con falta</span><strong>${dias}</strong></div>
       </div>
-      <table class="cob"><thead><tr><th scope="col">Mes</th><th scope="col">Personas-día que faltan</th><th scope="col">Días con falta</th><th scope="col">Peor día</th></tr></thead>
+      <table class="cob"><thead><tr><th scope="col">Mes</th><th scope="col">Faltan de media cada día</th><th scope="col">Días con falta</th><th scope="col">Peor día</th></tr></thead>
       <tbody>${byM.map((x, m) => `<tr><th scope="row">${MES[m]}</th>
-        <td><span class="bar" style="--w:${(100 * x.falta / max).toFixed(1)}%"></span><span class="num">${x.falta}</span></td>
+        <td><span class="bar" style="--w:${(100 * mediaM[m] / max).toFixed(1)}%"></span><span class="num">${(Math.round(mediaM[m] * 10) / 10).toString().replace('.', ',')}</span></td>
         <td class="num">${x.dias}</td>
         <td>${x.peor ? `${C.fmt(x.peor.iso)}: trabajan ${x.peor.trabajan} de ${x.peor.necesarios}` : '—'}</td></tr>`).join('')}</tbody></table>
       ${bolsaHtml()}
